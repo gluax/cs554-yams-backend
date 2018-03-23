@@ -1,0 +1,27 @@
+{
+  "name": "cs554-yams",
+  "version": "1.0.0",
+  "description": "YAMS: Yet Another Messaging Service",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gluaxspeed/cs554-yams.git"
+  },
+  "keywords": [
+    "proton-native",
+    "react",
+    "redux",
+    "typescript",
+    "sockets",
+    "aws-s3"
+  ],
+  "author": "Rob Herley, Jonathan Pavlik, Albert Tang, Aimal Wajihuddin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gluaxspeed/cs554-yams/issues"
+  },
+  "homepage": "https://github.com/gluaxspeed/cs554-yams#readme"
+}
