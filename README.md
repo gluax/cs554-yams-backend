@@ -7,10 +7,10 @@ Group Name: **Webpackers**
 
 Group Members:
 
-- Rob Herley - 10402103
-- Jonathan Pavlik - 10396923
-- Albert Tang - 10406380
-- Aimal Wajihuddin - 10408438
+- Rob Herley
+- Jonathan Pavlik
+- Albert Tang
+- Aimal Wajihuddin
 
 Functional/General Overview:
 
@@ -58,4 +58,3 @@ Stretch Goals
 - Location Sending
   - Send a user a location for meetups
   - Uses Google Maps API
-  
