@@ -47,7 +47,7 @@ class Server {
       let router: express.Router;
       router = express.Router();
 
-      // this.app.use('/', router);
+      this.app.use('/', router);
 
       this.app.use('*', (req: express.Request, res: express.Response) => {
          res
