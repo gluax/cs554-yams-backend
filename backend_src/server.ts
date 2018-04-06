@@ -52,7 +52,7 @@ class Server {
       this.app.use('*', (req: express.Request, res: express.Response) => {
          res
             .status(418)
-            .json({ error: `i'm a teapot`, meme: 'https://http.cat/420' });
+            .json({ error: `i'm a teapot`, meme: 'https://http.cat/418' });
       });
    }
 }
