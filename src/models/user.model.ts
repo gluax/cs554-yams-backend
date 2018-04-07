@@ -1,8 +1,17 @@
-import { model, Schema } from 'mongoose';
+import { Document, model, Model, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import uuidv4 from 'uuid/v4';
 
-class UserSchema: Schema = new Schema({
+export interface IUser extends Document {
+  _id: string,
+  firstName: string,
+  lastName: string,
+  username: string,
+  email: string,
+  password: string
+}
+
+const UserSchema: Schema = new Schema({
   _id: {
     type: String,
     default: uuidv4
@@ -39,27 +48,29 @@ class UserSchema: Schema = new Schema({
   //in future need to subnest chats model
 });
 
-const User = module.exports = model('User', UserSchema);
+const User: Model<IUser> = model('User', UserSchema);
 
-module.exports.newUser = async (newUser: UserSchema, callback: function) => {
+export default User;
+
+module.exports.newUser = async (newUser: IUser, callback: any) => {
   bcrypt.genSalt(10, async (err: Error | null, salt: string) => {
-    bcrypt.hash(newUser.password, salt, async (err: Error | null, hash: string | number) => {
+    bcrypt.hash(newUser.password, salt, async (err: Error | null, hash: string) => {
       newUser.password = hash;
       await newUser.save(callback);
     });
   });
 }
 
-module.exports.getUserByUsername = (username: string, callback: function) => {
+module.exports.getUserByUsername = (username: string, callback) => {
   User.findOne({username: username}, callback);
 }
 
-module.exports.getUserById =  (id: string, callback: function) => {
+module.exports.getUserById =  (id: string, callback) => {
   User.findById(id, callback);
 }
 
-module.exports.comparePassword =  (possiblePass: string, hash: string, callback: function) => {
-  bcrypt.compare(possiblePass, hash,  (err: Error | null, match: string) => {
+module.exports.comparePassword =  (possiblePass: string, hash: string, callback) => {
+  bcrypt.compare(possiblePass, hash,  (err: Error | null, match: boolean) => {
     if(err) throw err;
     callback(null, match);
   });

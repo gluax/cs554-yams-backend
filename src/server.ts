@@ -2,6 +2,8 @@ import cors from 'cors';
 import express from 'express';
 import morgan from 'morgan';
 
+import UserRouter from './controllers/user.controls';
+
 class Server {
    public app: express.Application;
 
@@ -47,6 +49,7 @@ class Server {
       const router: express.Router = express.Router();
 
       this.app.use('/', router);
+      this.app.use('/api/v1/user', UserRouter);
 
       this.app.use('*', (req: express.Request, res: express.Response) => {
          res
