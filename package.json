@@ -36,6 +36,7 @@
       "@types/morgan": "^1.7.35",
       "@types/node": "^9.6.2",
       "@types/passport-local": "^1.0.33",
+      "@types/passport-local-mongoose": "^4.0.11",
       "@types/uuid": "^3.4.3",
       "concurrently": "^3.5.1",
       "typescript": "^2.8.1"
@@ -47,6 +48,7 @@
       "mongoose": "^5.0.13",
       "morgan": "^1.9.0",
       "passport-local": "^1.0.0",
+      "passport-local-mongoose": "^5.0.0",
       "uuid": "^3.2.1"
    }
 }

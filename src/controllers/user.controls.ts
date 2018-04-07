@@ -90,5 +90,6 @@ class UserRouter {
 
 const userRoutes = new UserRouter();
 userRoutes.routes();
+const router = userRoutes.router;
 
-export default userRoutes.router;
+export default router;

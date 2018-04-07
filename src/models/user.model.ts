@@ -1,6 +1,7 @@
 import { Document, model, Model, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import uuidv4 from 'uuid/v4';
+import passportLocalMongoose from 'passport-local-mongoose';
 
 export interface IUser extends Document {
   _id: string,
@@ -8,7 +9,8 @@ export interface IUser extends Document {
   lastName: string,
   username: string,
   email: string,
-  password: string
+  password: string,
+  newUser(newUser: any, callback: any): any
 }
 
 const UserSchema: Schema = new Schema({
@@ -48,18 +50,20 @@ const UserSchema: Schema = new Schema({
   //in future need to subnest chats model
 });
 
-const User: Model<IUser> = model('User', UserSchema);
+UserSchema.plugin(passportLocalMongoose);
+
+const User: Model<IUser> = model<IUser>('User', UserSchema);
 
 export default User;
 
-module.exports.newUser = async (newUser: IUser, callback: any) => {
+UserSchema.method('newUser', async (newUser: any, callback: any) => {
   bcrypt.genSalt(10, async (err: Error | null, salt: string) => {
     bcrypt.hash(newUser.password, salt, async (err: Error | null, hash: string) => {
       newUser.password = hash;
       await newUser.save(callback);
     });
   });
-}
+});
 
 module.exports.getUserByUsername = (username: string, callback) => {
   User.findOne({username: username}, callback);
@@ -76,7 +80,7 @@ module.exports.comparePassword =  (possiblePass: string, hash: string, callback)
   });
 }
 
-module.exports.updateUser = async (id: string, updates: object, callback) => {
+module.exports.updateUser = async (id: string, updates, callback) => {
   if(updates.password) {
     await bcrypt.genSalt(10, async (err: Error | null, salt: string) => {
       await bcrypt.hash(updates.password, salt, async (err: Error | null, hash: string | number) => {
