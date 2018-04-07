@@ -13,7 +13,7 @@ class Server {
 
    private config(): void {
       // connect mongoose
-      const MONGO_URI = '';
+      const MONGO_URI = 'mongodb://localhost:27017/yams';
 
       // configuration
       this.app.use(express.json());
@@ -44,8 +44,7 @@ class Server {
    }
 
    private routes(): void {
-      let router: express.Router;
-      router = express.Router();
+      const router: express.Router = express.Router();
 
       this.app.use('/', router);
 
