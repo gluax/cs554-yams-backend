@@ -9,12 +9,15 @@ export interface IUser extends Document {
   lastName: string,
   username: string,
   email: string,
-  password: string,
+  password: string
 }
 
 export interface IUserModel extends Model<IUser> {
-  newUser(newUser: IUser, callback: (err: Error, user: IUser) => void): Promise<any>
-  updateUser(id: any, updates: any, callback: (err: Error, user: IUser) => void): Promise<any>
+  newUser(newUser: IUser, callback: (err: Error, user: IUser) => void): Promise<void>,
+  getUserByUsername(username: string, callback: (err: Error, user: IUser) => any): void,
+  getUserById(id: string, callback: (err: Error, user: IUser) => any): void,
+  comparePassword(possiblePass: string, hash: string, callback: (err: Error, match: boolean) => any): void,
+  updateUser(id: any, updates: any, callback: (err: Error, user: IUser) => void): Promise<void>
 }
 
 const UserSchema: Schema = new Schema({
@@ -56,7 +59,7 @@ const UserSchema: Schema = new Schema({
 
 UserSchema.plugin(passportLocalMongoose);
 
-UserSchema.static('newUser', async (newUser: IUser, callback: (err: Error, user: IUser) => void): Promise<any> => {
+UserSchema.static('newUser', async (newUser: IUser, callback: (err: Error, user: IUser) => void): Promise<void> => {
   bcrypt.genSalt(10, async (err: Error | null, salt: string) => {
     bcrypt.hash(newUser.password, salt, async (err: Error | null, hash: string) => {
       newUser.password = hash;
@@ -65,22 +68,22 @@ UserSchema.static('newUser', async (newUser: IUser, callback: (err: Error, user:
   });
 });
 
-UserSchema.static('getUserByUsername', (username: string, callback: Function) => {
+UserSchema.static('getUserByUsername', (username: string, callback: (err: Error, user: IUser) => any): void => {
   User.findOne({username: username}, callback);
 });
 
-UserSchema.static('getUserById', (id: string, callback: Function) => {
+UserSchema.static('getUserById', (id: string, callback: (err: Error, user: IUser) => any): void => {
   User.findById(id, callback);
 });
 
-UserSchema.static('comparePassword', (possiblePass: string, hash: string, callback: Function) => {
+UserSchema.static('comparePassword', (possiblePass: string, hash: string, callback: (err: Error, match: boolean) => any): void => {
   bcrypt.compare(possiblePass, hash,  (err: Error | null, match: boolean) => {
     if(err) throw err;
     callback(null, match);
   });
 });
 
-UserSchema.static('updateUser', async (id: any, updates: any, callback: (err: Error, user: IUser) => void) => {
+UserSchema.static('updateUser', async (id: any, updates: any, callback: (err: Error, user: IUser) => void): Promise<void> => {
   if(updates.password) {
     await bcrypt.genSalt(10, async (err: Error | null, salt: string) => {
       await bcrypt.hash(updates.password, salt, async (err: Error | null, hash: string | number) => {
@@ -108,6 +111,6 @@ UserSchema.static('updateUser', async (id: any, updates: any, callback: (err: Er
 
 });
 
-const User = model<IUser>('User', UserSchema) as IUserModel;
+const User: IUserModel = model<IUser>('User', UserSchema) as IUserModel;
 
 export default User;

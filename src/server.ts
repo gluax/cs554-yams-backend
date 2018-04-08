@@ -81,8 +81,6 @@ class Server {
       const router: express.Router = express.Router();
       this.app.use('/', router);
 
-      this._userRouter.routes();
-
       this.app.use('/api/v1/user', this._userRouter.router);
 
       this.app.use('*', (req: express.Request, res: express.Response) => {
