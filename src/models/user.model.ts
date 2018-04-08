@@ -10,7 +10,11 @@ export interface IUser extends Document {
   username: string,
   email: string,
   password: string,
-  newUser(newUser: IUser, callback: Function): Promise<any>
+}
+
+export interface IUserModel extends Model<IUser> {
+  newUser(newUser: IUser, callback: (err: Error, user: IUser) => void): Promise<any>
+  updateUser(id: any, updates: any, callback: (err: Error, user: IUser) => void): Promise<any>
 }
 
 const UserSchema: Schema = new Schema({
@@ -52,7 +56,7 @@ const UserSchema: Schema = new Schema({
 
 UserSchema.plugin(passportLocalMongoose);
 
-UserSchema.method('newUser', async (newUser: any, callback: Function): Promise<any> => {
+UserSchema.static('newUser', async (newUser: IUser, callback: (err: Error, user: IUser) => void): Promise<any> => {
   bcrypt.genSalt(10, async (err: Error | null, salt: string) => {
     bcrypt.hash(newUser.password, salt, async (err: Error | null, hash: string) => {
       newUser.password = hash;
@@ -61,22 +65,22 @@ UserSchema.method('newUser', async (newUser: any, callback: Function): Promise<a
   });
 });
 
-module.exports.getUserByUsername = (username: string, callback: Function) => {
+UserSchema.static('getUserByUsername', (username: string, callback: Function) => {
   User.findOne({username: username}, callback);
-}
+});
 
-module.exports.getUserById =  (id: string, callback: Function) => {
+UserSchema.static('getUserById', (id: string, callback: Function) => {
   User.findById(id, callback);
-}
+});
 
-module.exports.comparePassword =  (possiblePass: string, hash: string, callback: Function) => {
+UserSchema.static('comparePassword', (possiblePass: string, hash: string, callback: Function) => {
   bcrypt.compare(possiblePass, hash,  (err: Error | null, match: boolean) => {
     if(err) throw err;
     callback(null, match);
   });
-}
+});
 
-module.exports.updateUser = async (id: string, updates, callback: any) => {
+UserSchema.static('updateUser', async (id: any, updates: any, callback: (err: Error, user: IUser) => void) => {
   if(updates.password) {
     await bcrypt.genSalt(10, async (err: Error | null, salt: string) => {
       await bcrypt.hash(updates.password, salt, async (err: Error | null, hash: string | number) => {
@@ -102,8 +106,8 @@ module.exports.updateUser = async (id: string, updates, callback: any) => {
     );
   }
 
-};
+});
 
-const User: Model<IUser> = model<IUser>('User', UserSchema);
+const User = model<IUser>('User', UserSchema) as IUserModel;
 
 export default User;
