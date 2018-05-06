@@ -39,70 +39,52 @@ const UserSchema = new Schema(
    { timestamps: true }
 );
 
-// These need to all be async, no callbacks
+const User = model<UserModel>('User', UserSchema);
 
-// export let newUser = async (newUser: UserModel, callback: function) => {
-//    bcrypt.genSalt(10, async (err: Error | null, salt: string) => {
-//       bcrypt.hash(
-//          newUser.password,
-//          salt,
-//          async (err: Error | null, hash: string | number) => {
-//             newUser.password = hash;
-//             await newUser.save(callback);
-//          }
-//       );
-//    });
-// };
+export let createUser = async (newUser: UserModel) =>
+   bcrypt.genSalt(10, async (err, salt) => {
+      bcrypt.hash(newUser.password, salt, async (err, hash) => {
+         newUser.password = hash;
+         return newUser.save();
+      });
+   });
 
-// export let getUserByUsername = (username: string, callback: function) => {
-//    User.findOne({ username: username }, callback);
-// };
+export let getUserByUsername = async (username: string) =>
+   User.findOne({ username });
 
-// export let getUserById = (id: string, callback: function) => {
-//    User.findById(id, callback);
-// };
+export let getUserById = async (id: string) => User.findById(id);
 
-// export let comparePassword = (
-//    possiblePass: string,
-//    hash: string,
-//    callback: function
-// ) => {
-//    bcrypt.compare(possiblePass, hash, (err: Error | null, match: string) => {
-//       if (err) throw err;
-//       callback(null, match);
-//    });
-// };
+type UserUpdates = {
+   username?: string;
+   password?: string;
+   email?: string;
+   firstName?: string;
+   lastName?: string;
+};
 
-// export let updateUser = async (id: string, updates: object, callback) => {
-//    if (updates.password) {
-//       await bcrypt.genSalt(10, async (err: Error | null, salt: string) => {
-//          await bcrypt.hash(
-//             updates.password,
-//             salt,
-//             async (err: Error | null, hash: string | number) => {
-//                updates.password = hash;
-//                await User.findOneAndUpdate(
-//                   { _id: id },
-//                   {
-//                      $set: updates
-//                   },
-//                   { new: true },
-//                   callback
-//                );
-//             }
-//          );
-//       });
-//    } else {
-//       await User.findOneAndUpdate(
-//          { _id: id },
-//          {
-//             $set: updates
-//          },
-//          { new: true },
-//          callback
-//       );
-//    }
-// };
+export let updateUser = async (id: string, updates: UserUpdates) => {
+   if (updates.password) {
+      await bcrypt.genSalt(10, async (err, salt) => {
+         await bcrypt.hash(updates.password, salt, async (err, hash) => {
+            updates.password = hash;
+            return User.findOneAndUpdate(
+               { _id: id },
+               {
+                  $set: updates
+               },
+               { new: true }
+            );
+         });
+      });
+   } else {
+      return User.findOneAndUpdate(
+         { _id: id },
+         {
+            $set: updates
+         },
+         { new: true }
+      );
+   }
+};
 
-const User = model('User', UserSchema);
 export default User;

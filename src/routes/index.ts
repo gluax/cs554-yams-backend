@@ -1,13 +1,12 @@
 import { Router, Request, Response } from 'express';
+import UserRouter from './user.router';
 const router: Router = Router();
 
 router.get('/', (req: Request, res: Response) => {
    res.send('<marquee>the server is working</marquee>');
 });
 
-router.get('/test', (req: Request, res: Response) => {
-   res.json({ msg: 'this is a test' });
-});
+router.use('/user', UserRouter);
 
 router.use('*', (req: Request, res: Response) => {
    res
