@@ -13,6 +13,10 @@ export interface IChat extends Document {
   messages: Array<IMessage>
 }
 
+export interface IChatModel extends Mode<IChat> {
+  
+}
+
 const ChatSchema: Schema = new Schema({
   _id: {
     type: String,
