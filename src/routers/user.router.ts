@@ -2,9 +2,16 @@ import User, { IUser, IUserModel } from '../models/user.model';
 import { NextFunction, Request, Response, Router } from 'express';
 import uuidv4 from 'uuid/v4';
 import passport from 'passport';
-import passportLocal from 'passport-local';
+import jwt from 'jsonwebtoken';
+import passportJWT from 'passport-jwt';
 
-const LocalStrategy = passportLocal.Strategy;
+const ExtractJwt = passportJWT.ExtractJwt;
+const JwtStrategy = passportJWT.Strategy;
+
+const jwtOptions: passportJWT.StrategyOptions = {
+   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+   secretOrKey: 'foobar'
+};
 
 export default class UserRouter {
    public router: Router;
@@ -82,9 +89,33 @@ export default class UserRouter {
    }
 
    private login(req: Request, res: Response): void {
-      const username: string = req.body.username;
-      res.status(200).json({
-         msg: 'login success'
+      const { username, password } = req.body;
+      User.getUserByUsername(username, (err: Error, user: IUser) => {
+         if (err) {
+            res.json({ error: [{ msg: `User '${username} is not found.'` }] });
+            return;
+         }
+         User.comparePassword(
+            password,
+            user.password,
+            (err: Error, match: boolean) => {
+               if (err || !match) {
+                  res.json({
+                     error: [{ msg: `Incorrect username or password.'` }]
+                  });
+                  return;
+               }
+               const payload = {
+                  id: user._id,
+                  username
+               };
+               const token = jwt.sign(payload, jwtOptions.secretOrKey);
+               res.status(200).json({
+                  msg: 'login success',
+                  token
+               });
+            }
+         );
       });
    }
 
@@ -93,16 +124,6 @@ export default class UserRouter {
       res.status(200).json({
          msg: 'logout success'
       });
-   }
-
-   private isAuthUser(req: Request, res: Response, next: NextFunction): void {
-      if (req.isAuthenticated()) {
-         return next();
-      } else {
-         res.status(403).json({
-            error: [{ msg: 'Not authenticated' }]
-         });
-      }
    }
 
    private async updateUser(req: Request, res: Response): Promise<void> {
@@ -131,7 +152,6 @@ export default class UserRouter {
 
    private async aboutUser(req: Request, res: Response): Promise<void> {
       const id: string = req.user.id;
-
       await User.findOne({ _id: id }, (err, user) => {
          if (err) {
             res.status(500).json({
@@ -152,50 +172,34 @@ export default class UserRouter {
 
    private routes(): void {
       this.router.post('/register', this.register);
+      this.router.post('/login', this.login);
       this.router.post(
-         '/login',
-         passport.authenticate('local', { failWithError: true }),
-         (req: Request, res: Response, next: NextFunction) => {
-            // handle success
-            this.login(req, res);
-         },
-         (err: Error, req: Request, res: Response, next: NextFunction) => {
-            // handle error
-            if (err) {
-               res.status(409).json({
-                  error: [{ msg: 'Invalid Username or Password' }]
-               });
-            }
-         }
+         '/update',
+         passport.authenticate('jwt', { session: false }),
+         this.updateUser
       );
-      this.router.post('/update', this.isAuthUser, this.updateUser);
-      this.router.get('/about', this.isAuthUser, this.aboutUser);
-      this.router.get('/logout', this.isAuthUser, this.logout);
+      this.router.get(
+         '/about',
+         passport.authenticate('jwt', { session: false }),
+         this.aboutUser
+      );
+      this.router.get(
+         '/logout',
+         passport.authenticate('jwt', { session: false }),
+         this.logout
+      );
    }
 }
 
 passport.use(
-   new LocalStrategy((username: string, password: string, done: any) => {
-      User.getUserByUsername(username, (err: Error, user: IUser) => {
+   new JwtStrategy(jwtOptions, (payload, done) => {
+      User.getUserById(payload.id, (err: Error, user: IUser) => {
          if (err) throw err;
          if (!user) {
             return done(null, false, { error: [{ msg: 'Unknown User' }] });
+         } else {
+            return done(null, user);
          }
-
-         User.comparePassword(
-            password,
-            user.password,
-            (err: Error, match: boolean) => {
-               if (err) throw err;
-               if (match) {
-                  return done(null, user);
-               } else {
-                  return done(null, false, {
-                     error: [{ msg: 'Invalid password' }]
-                  });
-               }
-            }
-         );
       });
    })
 );
