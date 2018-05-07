@@ -13,8 +13,8 @@ export interface IChat extends Document {
   messages: Array<IMessage>
 }
 
-export interface IChatModel extends Mode<IChat> {
-  
+export interface IChatModel extends Model<IChat> {
+  newChat(newChat: IChat, callback: (err: Error, chat: IChat) => void): Promise<void>,
 }
 
 const ChatSchema: Schema = new Schema({
@@ -37,13 +37,21 @@ const ChatSchema: Schema = new Schema({
     required: false
   },
   users: {
-    type: [User],
+    type: [{ type: Schema.Types.ObjectId, ref: 'IUser'}],
     default: [],
     required: true,
   },
   messages: {
-    type: [Message],
+    type: [{ type: Schema.Types.ObjectId, ref: 'IMessage'}],
     default: [],
     required: false
   }
 });
+
+ChatSchema.static('newChat', async (newChat: IChat, callback: (err: Error, chat: IChat) => void): Promise<void> => {
+  await newChat.save(callback);
+});
+
+const Chat: IChatModel = model<IChat>('Chat', ChatSchema) as IChatModel;
+
+export default Chat;

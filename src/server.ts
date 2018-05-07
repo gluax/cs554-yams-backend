@@ -8,10 +8,12 @@ import passport from 'passport';
 
 
 import UserRouter from './routers/user.router';
+import ChatRouter from './routers/chat.router';
 
 class Server {
    public app: express.Application;
    private _userRouter = new UserRouter();
+   private _chatRouter = new ChatRouter();
 
    constructor() {
       this.app = express();
@@ -82,6 +84,7 @@ class Server {
       this.app.use('/', router);
 
       this.app.use('/api/v1/user', this._userRouter.router);
+      this.app.use('/api/v1/chat', this._chatRouter.router);
 
       this.app.use('*', (req: express.Request, res: express.Response) => {
          res
