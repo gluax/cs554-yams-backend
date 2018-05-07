@@ -1,3 +1,4 @@
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import express from 'express';
@@ -16,7 +17,8 @@ class Server {
    constructor() {
       this.app = express();
       this.config();
-      this.routes();
+      this.applyMiddleware();
+      this.app.use(routes);
    }
 
    private config(): void {
@@ -53,28 +55,6 @@ class Server {
           }
         })
       );
-
-      // cors
-      this.app.use(cors());
-      this.app.use(
-         (
-            req: express.Request,
-            res: express.Response,
-            next: express.NextFunction
-         ) => {
-            res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
-            res.header(
-               'Access-Control-Allow-Methods',
-               'GET, POST, PUT, DELETE, OPTIONS'
-            );
-            res.header(
-               'Access-Control-Allow-Headers',
-               'Origin, X-Requested-With, Content-Type, Accept, Authorization, Access-Control-Allow-Credentials'
-            );
-            res.header('Access-Control-Allow-Credentials', 'true');
-            next();
-         }
-      );
    }
 
    private routes(): void {
@@ -87,7 +67,6 @@ class Server {
          res
             .status(418)
             .json({ error: `i'm a teapot`, meme: 'https://http.cat/418' });
-      });
    }
 }
 

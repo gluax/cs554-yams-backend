@@ -102,18 +102,16 @@ UserSchema.static('updateUser', async (id: any, updates: any, callback: (err: Er
           callback
         );
       });
-    });
-  } else {
-    await User.findOneAndUpdate(
-      { _id: id },
-      {
-        $set: updates
-      },
-      { new: true },
-      callback
-    );
-  }
-
+   } else {
+      return User.findOneAndUpdate(
+         { _id: id },
+         {
+            $set: updates
+         },
+         { new: true }
+      );
+   }
+};
 });
 
 const User: IUserModel = model<IUser>('User', UserSchema) as IUserModel;
