@@ -89,6 +89,17 @@ export default class UserRouter {
    }
 
    private login(req: Request, res: Response): void {
+      req.checkBody('username', 'Username is required').notEmpty();
+      req.checkBody('password', 'Password is required').notEmpty();
+
+      const errors: Record<string, any> = req.validationErrors();
+      if (errors) {
+         res.status(400).json({
+            error: errors
+         });
+         return;
+      }
+
       const { username, password } = req.body;
       User.getUserByUsername(username, (err: Error, user: IUser) => {
          if (err) {
