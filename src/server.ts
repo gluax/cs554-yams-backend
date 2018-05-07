@@ -6,7 +6,6 @@ import mongoose from 'mongoose';
 import expressValidator from 'express-validator';
 import passport from 'passport';
 
-
 import UserRouter from './routers/user.router';
 import ChatRouter from './routers/chat.router';
 
@@ -32,51 +31,15 @@ class Server {
       this.app.use(compression());
       this.app.use(morgan('dev'));
 
-      //passport init
+      // passport init
       this.app.use(passport.initialize());
       this.app.use(passport.session());
 
-      //validation
-      this.app.use(
-        expressValidator({
-          errorFormatter: (param: string, msg: string, value: string) => {
-            let namespace = param.split('.'),
-            root = namespace.shift(),
-            formParam = root;
-
-            while (namespace.length) {
-              formParam += '[' + namespace.shift() + ']';
-            }
-            return {
-              param: formParam,
-              msg: msg,
-              value: value
-            };
-          }
-        })
-      );
+      // validation
+      this.app.use(expressValidator());
 
       // cors
       this.app.use(cors());
-      this.app.use(
-         (
-            req: express.Request,
-            res: express.Response,
-            next: express.NextFunction
-         ) => {
-            res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
-            res.header(
-               'Access-Control-Allow-Methods',
-               'GET, POST, PUT, DELETE, OPTIONS'
-            );
-            res.header(
-               'Access-Control-Allow-Headers',
-               'Origin, X-Requested-With, Content-Type, Accept, Authorization, Access-Control-Allow-Credentials'
-            );
-            res.header('Access-Control-Allow-Credentials', 'true');
-            next();
-         }
-      );
    }
 
    private routes(): void {
