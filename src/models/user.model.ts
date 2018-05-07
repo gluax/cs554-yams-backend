@@ -54,6 +54,11 @@ const UserSchema: Schema = new Schema({
     default: '',
     required: true
   },
+  avatar: {
+    type: String,
+    default: '',
+    required: false
+  }
   //in future need to subnest chats model
 });
 
