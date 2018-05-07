@@ -4,7 +4,8 @@
    "description": "YAMS: Yet Another Messaging Service",
    "main": "index.js",
    "scripts": {
-      "dev": "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,yellow.bold\" \"npm run ts:watch\" \"npm run node:dev\"",
+      "dev":
+         "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,yellow.bold\" \"npm run ts:watch\" \"npm run node:dev\"",
       "node:dev": "nodemon dist/",
       "node:dist": "node dist/",
       "ts:build": "tsc",
@@ -33,11 +34,11 @@
       "@types/compression": "0.0.36",
       "@types/cors": "^2.8.3",
       "@types/express": "^4.11.1",
+      "@types/jsonwebtoken": "^7.2.7",
       "@types/mongoose": "^5.0.9",
       "@types/morgan": "^1.7.35",
       "@types/node": "^9.6.2",
-      "@types/passport-local": "^1.0.33",
-      "@types/passport-local-mongoose": "^4.0.11",
+      "@types/passport-jwt": "^3.0.1",
       "@types/uuid": "^3.4.3",
       "concurrently": "^3.5.1",
       "typescript": "^2.8.1"
@@ -48,10 +49,11 @@
       "cors": "^2.8.4",
       "express": "^4.16.3",
       "express-validator": "^5.1.1",
+      "jsonwebtoken": "^8.2.1",
       "mongoose": "^5.0.13",
       "morgan": "^1.9.0",
       "passport": "^0.4.0",
-      "passport-local": "^1.0.0",
+      "passport-jwt": "^4.0.0",
       "passport-local-mongoose": "^5.0.0",
       "uuid": "^3.2.1"
    }
