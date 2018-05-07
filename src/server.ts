@@ -1,12 +1,18 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import compression from 'compression';
+import express from 'express';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
 import expressValidator from 'express-validator';
-import routes from './routes/';
+import passport from 'passport';
+
+
+import UserRouter from './routers/user.router';
 
 class Server {
    public app: express.Application;
+   private _userRouter = new UserRouter();
 
    constructor() {
       this.app = express();
@@ -15,28 +21,52 @@ class Server {
       this.app.use(routes);
    }
 
-   private applyMiddleware(): void {
-      // Parsing POST Reqs
+   private config(): void {
+      // connect mongoose
+      const MONGO_URI = 'mongodb://localhost:27017/yams';
+      mongoose.connect(MONGO_URI || process.env.MONGODB_URI);
+
+      // configuration
       this.app.use(express.json());
       this.app.use(express.urlencoded({ extended: true }));
-
-      // Logging
+      this.app.use(compression());
       this.app.use(morgan('dev'));
 
-      // Validation/Error Handling
-      this.app.use(expressValidator());
+      //passport init
+      this.app.use(passport.initialize());
+      this.app.use(passport.session());
 
-      // Cors
-      this.app.use(cors());
+      //validation
+      this.app.use(
+        expressValidator({
+          errorFormatter: (param: string, msg: string, value: string) => {
+            let namespace = param.split('.'),
+            root = namespace.shift(),
+            formParam = root;
+
+            while (namespace.length) {
+              formParam += '[' + namespace.shift() + ']';
+            }
+            return {
+              param: formParam,
+              msg: msg,
+              value: value
+            };
+          }
+        })
+      );
    }
 
-   private config(): void {
-      // Put any db init / redis / s3 configs here
-      const MONGO_URI = process.env.MONGO || 'mongodb://localhost:27017/yams';
-      (<any>mongoose).Promise = global.Promise;
-      mongoose.connect(MONGO_URI).catch(err => {
-         console.log('MongoDB error:' + err);
-      });
+   private routes(): void {
+      const router: express.Router = express.Router();
+      this.app.use('/', router);
+
+      this.app.use('/api/v1/user', this._userRouter.router);
+
+      this.app.use('*', (req: express.Request, res: express.Response) => {
+         res
+            .status(418)
+            .json({ error: `i'm a teapot`, meme: 'https://http.cat/418' });
    }
 }
 
