@@ -71,7 +71,7 @@ ChatSchema.static('addUser', async (chatId: string, username: string, callback: 
 
 });
 
-ChatSchema.static('addUser', async (chatId: string, username: string, callback: (err: Error, chat: IChat) => any): Promise<void> => {
+ChatSchema.static('removeUser', async (chatId: string, username: string, callback: (err: Error, chat: IChat) => any): Promise<void> => {
   const found: any = await User.getUserByUsername(username,  async (err: Error, user: IUser) => {
     if (err) throw err;;
     if (!user) {
