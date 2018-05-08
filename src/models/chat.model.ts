@@ -15,6 +15,8 @@ export interface IChat extends Document {
 
 export interface IChatModel extends Model<IChat> {
   newChat(newChat: IChat, callback: (err: Error, chat: IChat) => void): Promise<void>,
+  addUser(chatId: string, username: string, callback: (err: Error, chat: IChat) => any): Promise<void>,
+  removeUser(chatId: string, username: string, callback: (err: Error, chat: IChat) => any): Promise<void>
 }
 
 const ChatSchema: Schema = new Schema({
@@ -50,6 +52,40 @@ const ChatSchema: Schema = new Schema({
 
 ChatSchema.static('newChat', async (newChat: IChat, callback: (err: Error, chat: IChat) => void): Promise<void> => {
   await newChat.save(callback);
+});
+
+ChatSchema.static('addUser', async (chatId: string, username: string, callback: (err: Error, chat: IChat) => any): Promise<void> => {
+  const found: any = await User.getUserByUsername(username,  async (err: Error, user: IUser) => {
+    if (err) throw err;;
+    if (!user) {
+      return false;
+    }
+
+    await Chat.findOneAndUpdate(
+      { _id: chatId },
+      { $push: { users: user } },
+      { new: true },
+      callback
+    );
+  });
+
+});
+
+ChatSchema.static('addUser', async (chatId: string, username: string, callback: (err: Error, chat: IChat) => any): Promise<void> => {
+  const found: any = await User.getUserByUsername(username,  async (err: Error, user: IUser) => {
+    if (err) throw err;;
+    if (!user) {
+      return false;
+    }
+
+    await Chat.findOneAndUpdate(
+      { _id: chatId },
+      { $pull: { users: { username: username } } },
+      { new: true },
+      callback
+    );
+  });
+
 });
 
 const Chat: IChatModel = model<IChat>('Chat', ChatSchema) as IChatModel;

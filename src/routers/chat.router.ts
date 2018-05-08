@@ -40,23 +40,24 @@ export default class ChatRouter {
 
     let users: Array<IUser> = [];
 
-    userNames.forEach(async (user: string) => {
-      const found: any = await User.getUserByUsername(user,  (err: Error, user: IUser) => {
+    userNames.forEach(async (usern: string) => {
+      const found: any = await User.getUserByUsername(usern,  (err: Error, user: IUser) => {
         if (err) throw err;;
         if (!user) {
           return false;
         }
+
+        users.push(user);
       });
 
       if(!found) {
-        res.status(400).json({
-          error: `User ${user} not found.`
-        });
+      res.status(400).json({
+        error: `User ${usern} not found.`
+      });
 
-        return;
-      }
+      return;
+    }
 
-      users.push(found);
     });
 
     let newChat: IChat = new Chat({
@@ -64,7 +65,7 @@ export default class ChatRouter {
       isGroupChat: gc,
       img: img || '',
       users: users,
-      //messages: []
+      messages: []
     });
 
     await Chat.newChat(newChat, (err: Error, user: IChat) => {
