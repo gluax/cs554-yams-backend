@@ -52,7 +52,7 @@ export default class ChatRouter {
 
       if(!found) {
       res.status(400).json({
-        error: `User ${usern} not found.`
+        error: [{msg: `User ${usern} not found.` }]
       });
 
       return;
