@@ -102,8 +102,10 @@ export default class UserRouter {
 
       const { username, password } = req.body;
       User.getUserByUsername(username, (err: Error, user: IUser) => {
-         if (err) {
-            res.json({ error: [{ msg: `User '${username} is not found.'` }] });
+         if (err || !user) {
+            res
+               .status(404)
+               .json({ error: [{ msg: `User '${username}' is not found.` }] });
             return;
          }
          User.comparePassword(
@@ -111,8 +113,8 @@ export default class UserRouter {
             user.password,
             (err: Error, match: boolean) => {
                if (err || !match) {
-                  res.json({
-                     error: [{ msg: `Incorrect username or password.'` }]
+                  res.status(403).json({
+                     error: [{ msg: `Incorrect username or password.` }]
                   });
                   return;
                }
