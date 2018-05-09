@@ -4,8 +4,7 @@
    "description": "YAMS: Yet Another Messaging Service",
    "main": "index.js",
    "scripts": {
-      "dev":
-         "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,yellow.bold\" \"npm run ts:watch\" \"npm run node:dev\"",
+      "dev": "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,yellow.bold\" \"npm run ts:watch\" \"npm run node:dev\"",
       "node:dev": "nodemon dist/",
       "node:dist": "node dist/",
       "ts:build": "tsc",
@@ -39,6 +38,8 @@
       "@types/morgan": "^1.7.35",
       "@types/node": "^9.6.2",
       "@types/passport-jwt": "^3.0.1",
+      "@types/socket.io": "^1.4.33",
+      "@types/socket.io-redis": "^1.0.25",
       "@types/uuid": "^3.4.3",
       "concurrently": "^3.5.1",
       "typescript": "^2.8.1"
@@ -55,6 +56,8 @@
       "passport": "^0.4.0",
       "passport-jwt": "^4.0.0",
       "passport-local-mongoose": "^5.0.0",
+      "socket.io": "^2.1.0",
+      "socket.io-redis": "^5.2.0",
       "uuid": "^3.2.1"
    }
 }

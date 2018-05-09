@@ -1,6 +1,9 @@
-import server from './server';
+import app from './server';
+import initSockets from './sockets/';
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+const server = app.listen(PORT, () => {
    console.log('YAMS Server on:', PORT);
 });
+
+initSockets(server);
