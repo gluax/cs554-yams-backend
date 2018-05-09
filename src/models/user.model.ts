@@ -1,9 +1,7 @@
 import { Document, model, Model, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
-import uuidv4 from 'uuid/v4';
 
 export interface IUser extends Document {
-   _id: string;
    firstName: string;
    lastName: string;
    username: string;
@@ -34,10 +32,6 @@ export interface IUserModel extends Model<IUser> {
 }
 
 const UserSchema: Schema = new Schema({
-   _id: {
-      type: String,
-      default: uuidv4
-   },
    firstName: {
       type: String,
       default: '',

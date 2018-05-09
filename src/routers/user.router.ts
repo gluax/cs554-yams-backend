@@ -1,6 +1,5 @@
 import User, { IUser, IUserModel } from '../models/user.model';
 import { NextFunction, Request, Response, Router } from 'express';
-import uuidv4 from 'uuid/v4';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import passportJWT from 'passport-jwt';
