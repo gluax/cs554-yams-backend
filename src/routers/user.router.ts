@@ -22,8 +22,8 @@ export default class UserRouter {
    }
 
    private async register(req: Request, res: Response): Promise<void> {
-      req.checkBody('firstName', 'First name is required').notEmpty();
-      req.checkBody('lastName', 'Last name is required').notEmpty();
+      req.checkBody('firstName', 'First Name is required').notEmpty();
+      req.checkBody('lastName', 'Last Name is required').notEmpty();
       req.checkBody('email', 'Email is required').notEmpty();
       req.checkBody('email', 'Email is not valid').isEmail();
       req.checkBody('username', 'Username is required').notEmpty();
