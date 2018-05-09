@@ -9,7 +9,12 @@ interface YamsSocket extends socket.Socket {
 
 export default (server: any) => {
    const io: socket.Server = socket(server);
-   io.adapter(redisAdapter({ host: 'localhost', port: 6379 }));
+   io.adapter(
+      redisAdapter({
+         host: process.env.REDIS_HOST,
+         port: parseInt(process.env.REDIS_PORT)
+      })
+   );
 
    // Hash to find a socket id given a yams client id
    interface ClientHash {
@@ -24,7 +29,7 @@ export default (server: any) => {
          console.log('[SOCKET] Auth:', socket.handshake.query.jwt);
          if (!socket.handshake.query.jwt) throw 'Missing Socket Token!';
          const { query } = socket.handshake;
-         const tkn: any = await jwt.verify(query.jwt, 'foobar');
+         const tkn: any = await jwt.verify(query.jwt, process.env.JWT_SECRET);
          socket.yamsId = tkn.id;
          socket.username = tkn.username;
          clients[tkn.id] = socket.id;
@@ -44,6 +49,7 @@ export default (server: any) => {
          console.log(
             `'${socket.username}' to group '${msg.group}': ${msg.body}`
          );
+         socket.broadcast.emit('msg', 'howdy sockets!');
       });
 
       socket.on('disconnect', () => {

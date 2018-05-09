@@ -10,7 +10,7 @@ const JwtStrategy = passportJWT.Strategy;
 
 const jwtOptions: passportJWT.StrategyOptions = {
    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-   secretOrKey: 'foobar'
+   secretOrKey: process.env.JWT_SECRET
 };
 
 export default class UserRouter {

@@ -1,3 +1,6 @@
+// Environment files
+require('dotenv').config();
+
 import app from './server';
 import initSockets from './sockets/';
 

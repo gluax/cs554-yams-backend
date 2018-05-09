@@ -4,8 +4,7 @@
    "description": "YAMS: Yet Another Messaging Service",
    "main": "index.js",
    "scripts": {
-      "dev":
-         "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,yellow.bold\" \"npm run ts:watch\" \"npm run node:dev\"",
+      "dev": "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,yellow.bold\" \"npm run ts:watch\" \"npm run node:dev\"",
       "node:dev": "nodemon dist/",
       "node:dist": "node dist/",
       "ts:build": "tsc",
@@ -46,9 +45,11 @@
       "typescript": "^2.8.1"
    },
    "dependencies": {
+      "@types/dotenv": "^4.0.3",
       "bcrypt": "^2.0.0",
       "compression": "^1.7.2",
       "cors": "^2.8.4",
+      "dotenv": "^5.0.1",
       "express": "^4.16.3",
       "express-validator": "^5.1.1",
       "jsonwebtoken": "^8.2.1",

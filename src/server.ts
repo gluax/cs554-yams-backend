@@ -22,8 +22,7 @@ class Server {
 
    private config(): void {
       // connect mongoose
-      const MONGO_URI = 'mongodb://localhost:27017/yams';
-      mongoose.connect(MONGO_URI || process.env.MONGODB_URI);
+      mongoose.connect(process.env.MONGO_URI);
 
       // configuration
       this.app.use(express.json());
