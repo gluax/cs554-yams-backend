@@ -48,16 +48,18 @@ const ChatSchema: Schema = new Schema({
          _id: false
       }
    ],
-   messages: [
-      {
-         sentBy: String,
-         content: String,
-         media: Boolean,
-         ts: Date,
-         default: [],
-         required: false
-      }
-   ]
+   messages: {
+      type: [
+         {
+            sentBy: String,
+            content: String,
+            media: Boolean,
+            ts: Date
+         }
+      ],
+      default: [],
+      required: false
+   }
 });
 
 ChatSchema.static(

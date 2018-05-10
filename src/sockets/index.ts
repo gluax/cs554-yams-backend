@@ -1,5 +1,7 @@
 import socket from 'socket.io';
 import redisAdapter from 'socket.io-redis';
+import Chat, { IChat, IChatModel } from '../models/chat.model';
+import Message, { IMessage } from '../models/message.model';
 import jwt from 'jsonwebtoken';
 
 interface YamsSocket extends socket.Socket {
@@ -48,13 +50,26 @@ export default (server: any) => {
       console.log(`[SOCKET] Client (id: ${socket.id}) connected.`);
       console.log('[SOCKET] Client List:', clients);
 
-      socket.to(socket.id).emit('msg', 'Howdy from the server!');
-
-      socket.on('send', msg => {
+      socket.on('send', async msg => {
          console.log(
-            `'${socket.username}' to group '${msg.group}': ${msg.body}`
+            `'${socket.username}' to group '${msg.chatId}': ${msg.body}`
          );
-         socket.broadcast.emit('msg', 'howdy sockets!');
+         let newMessage: IMessage = {
+            sentBy: socket.username,
+            content: msg.body,
+            media: msg.media,
+            ts: new Date()
+         };
+         const chat = await Chat.findOneAndUpdate(
+            { _id: msg.chatId },
+            { $push: { messages: { ...newMessage } } }
+         );
+         for (let { user } of chat.users)
+            for (let sk of clients[user] || []) {
+               io
+                  .to(sk)
+                  .emit('recieve', { ...newMessage, chat: chat.chatname });
+            }
       });
 
       socket.on('disconnect', () => {
