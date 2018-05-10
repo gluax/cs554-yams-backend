@@ -186,10 +186,12 @@ export default class UserRouter {
    private async belongsChats(req: Request, res: Response): Promise<void> {
       const { username } = req.user;
       try {
+         const formatted: any = {};
          const data = await Chat.find({
             users: { $elemMatch: { username } }
          });
-         res.json(data);
+         data.forEach(e => (formatted[e._id] = e));
+         res.json(formatted);
       } catch (err) {
          res.status(500).json({
             error: [{ msg: err }]
