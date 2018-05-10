@@ -72,6 +72,20 @@ export default (server: any) => {
             }
       });
 
+      socket.on('addchat', async msg => {
+         console.log(
+            `[SOCKET] '${socket.username}' created group '${msg.chat}'`
+         );
+         const chat = await Chat.findOne({ chatname: msg.chat });
+         for (let user of chat.users) {
+            if (user.username !== msg.creator) {
+               for (let sk of clients[user.user] || []) {
+                  io.to(sk).emit('newchat', { chat: msg.chat });
+               }
+            }
+         }
+      });
+
       socket.on('disconnect', () => {
          console.log(`[SOCKET] Client (id: ${socket.id}) disconnected.`);
          const index = clients[socket.yamsId].indexOf(socket.id);

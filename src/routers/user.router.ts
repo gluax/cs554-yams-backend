@@ -199,6 +199,21 @@ export default class UserRouter {
       }
    }
 
+   private async userSearch(req: Request, res: Response): Promise<void> {
+      const { query } = req.params;
+      try {
+         const users = (await User.find({ username: new RegExp(query) })).map(
+            e => e.username
+         );
+         res.json(users);
+      } catch (err) {
+         console.log(err);
+         res.status(500).json({
+            error: [{ msg: err }]
+         });
+      }
+   }
+
    private routes(): void {
       this.router.post('/register', this.register);
       this.router.post('/login', this.login);
@@ -222,6 +237,7 @@ export default class UserRouter {
          passport.authenticate('jwt', { session: false }),
          this.belongsChats
       );
+      this.router.get('/search/:query', this.userSearch);
    }
 }
 
