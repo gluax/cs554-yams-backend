@@ -203,6 +203,6 @@ export default class ChatRouter {
       this.router.post('/new', this.createChat);
       this.router.post('/add/:id', this.addUser);
       this.router.post('/remove/:id', this.removeUser);
-      this.router.get('/:id/', this.chatInfo);
+      this.router.get('/:id', this.chatInfo);
    }
 }

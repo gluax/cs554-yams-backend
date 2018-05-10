@@ -1,4 +1,5 @@
 import User, { IUser, IUserModel } from '../models/user.model';
+import Chat, { IChat, IChatModel } from '../models/chat.model';
 import { NextFunction, Request, Response, Router } from 'express';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
@@ -182,6 +183,20 @@ export default class UserRouter {
       });
    }
 
+   private async belongsChats(req: Request, res: Response): Promise<void> {
+      const { username } = req.user;
+      try {
+         const data = await Chat.find({
+            users: { $elemMatch: { username } }
+         });
+         res.json(data);
+      } catch (err) {
+         res.status(500).json({
+            error: [{ msg: err }]
+         });
+      }
+   }
+
    private routes(): void {
       this.router.post('/register', this.register);
       this.router.post('/login', this.login);
@@ -199,6 +214,11 @@ export default class UserRouter {
          '/logout',
          passport.authenticate('jwt', { session: false }),
          this.logout
+      );
+      this.router.get(
+         '/chats',
+         passport.authenticate('jwt', { session: false }),
+         this.belongsChats
       );
    }
 }
