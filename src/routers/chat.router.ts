@@ -2,6 +2,7 @@ import User, { IUser } from '../models/user.model';
 import Chat, { IChat, IChatModel } from '../models/chat.model';
 import { NextFunction, Request, Response, Router } from 'express';
 import jwt from 'jsonwebtoken';
+import Message, { IMessage } from '../models/message.model';
 
 export default class ChatRouter {
    public router: Router;
@@ -27,11 +28,12 @@ export default class ChatRouter {
          const chat = await Chat.findById(req.params.id, {
             users: { $elemMatch: { username: tkn.username } }
          });
-         if (!chat) throw `Specified chat '${chat}' was not found.`;
+         if (!chat) throw `Specified chat '${req.params.id}' was not found.`;
          if (chat.users.length === 0)
             throw `User '${tkn.username}' is not verified for chat '${
                req.params.id
             }'`;
+         res.locals.username = tkn.username;
          next();
       } catch (err) {
          res.status(403).json({
@@ -229,7 +231,45 @@ export default class ChatRouter {
       res.json(chatInfo);
    }
 
-   private async sendMessage(req: Request, res: Response): Promise<void> {}
+   private async sendMessage(req: Request, res: Response): Promise<void> {
+      const id = req.params.id;
+
+      req.checkBody('content', 'Message must have content.').notEmpty();
+      req.checkBody('media', 'Message must specify content.').notEmpty();
+
+      const errors: Record<string, any> = req.validationErrors();
+
+      if (errors) {
+         res.status(400).json({
+            error: errors
+         });
+         return;
+      }
+
+      let newMessage: IMessage = {
+         sentBy: res.locals.username,
+         content: req.body.content,
+         media: false,
+         ts: new Date()
+      };
+
+      Chat.findOneAndUpdate(
+         { _id: id },
+         { $push: { messages: { ...newMessage } } },
+         (err: Error, chat: IChat) => {
+            if (err) {
+               res.status(400).json({
+                  error: err
+               });
+               return;
+            }
+
+            res.status(200).json({
+               msg: `Message '${newMessage.content}' sent!`
+            });
+         }
+      );
+   }
 
    private routes(): void {
       this.router.post('/new', this.createChat);
