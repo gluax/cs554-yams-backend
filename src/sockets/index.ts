@@ -16,14 +16,14 @@ export default (server: any) => {
       })
    );
 
-   // Hash to find a socket id given a yams client id
+   // Hash to find a socket id given a yams client id (array for multiple conn)
    interface ClientHash {
-      [yamsId: string]: string;
+      [yamsId: string]: string[];
    }
 
    let clients: ClientHash = {};
 
-   // Socket Auth (check if socket is part of room)
+   // Socket Auth
    io.use(async (socket: YamsSocket, next) => {
       try {
          console.log('[SOCKET] Auth:', socket.handshake.query.jwt);
@@ -32,7 +32,12 @@ export default (server: any) => {
          const tkn: any = await jwt.verify(query.jwt, process.env.JWT_SECRET);
          socket.yamsId = tkn.id;
          socket.username = tkn.username;
-         clients[tkn.id] = socket.id;
+         if (clients[tkn.id]) {
+            // if there is an existing socket array
+            clients[tkn.id].push(socket.id);
+         } else {
+            clients[tkn.id] = [socket.id];
+         }
          next();
       } catch (e) {
          console.error('[SOCKET] Authentication Error:', e);
@@ -54,7 +59,9 @@ export default (server: any) => {
 
       socket.on('disconnect', () => {
          console.log(`[SOCKET] Client (id: ${socket.id}) disconnected.`);
-         delete clients[socket.yamsId];
+         const index = clients[socket.yamsId].indexOf(socket.id);
+         if (index > -1) clients[socket.yamsId].splice(index, 1);
+         if (clients[socket.yamsId].length === 0) delete clients[socket.yamsId];
          console.log('[SOCKET] Client List:', clients);
       });
    });
