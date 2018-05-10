@@ -46,6 +46,7 @@
    },
    "dependencies": {
       "@types/dotenv": "^4.0.3",
+      "aws-sdk": "^2.236.1",
       "bcrypt": "^2.0.0",
       "compression": "^1.7.2",
       "cors": "^2.8.4",

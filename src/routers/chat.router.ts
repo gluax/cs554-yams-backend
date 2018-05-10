@@ -1,3 +1,6 @@
+import AWS = require('aws-sdk');
+AWS.config.region = 'us-east-2';
+
 import User, { IUser } from '../models/user.model';
 import Chat, { IChat, IChatModel } from '../models/chat.model';
 import { NextFunction, Request, Response, Router } from 'express';
@@ -6,10 +9,24 @@ import Message, { IMessage } from '../models/message.model';
 
 export default class ChatRouter {
    public router: Router;
+   private BUCKET_NAME: String;
+   private S3: AWS.S3;
 
    constructor() {
       this.router = Router();
       this.routes();
+
+      // aws config class dependent
+      if(!process.env.AWS_KEY || !process.env.AWS_SECRET) {
+        throw new Error('AWS_KEY and AWS_SECRET for s3 are required.');
+      }
+      AWS.config.accessKeyId = process.env.AWS_KEY;
+      AWS.config.secretAccessKey = process.env.AWS_SECRET;
+      if(!process.env.BUCKET_NAME) {
+        throw new Error('BUCKET_NAME for s3 is required.');
+      }
+      this.BUCKET_NAME = process.env.BUCKET_NAME;
+      this.S3 = new AWS.S3();
    }
 
    private async authReq(
@@ -269,6 +286,75 @@ export default class ChatRouter {
             });
          }
       );
+   }
+
+   private async uploadImage(req: Request, res: Response): Promise<void> {
+     const id  = req.params.cname;
+     const message = req.params.message;
+
+     req.checkBody('message', 'Must submit a message.').notEmpty();
+
+     await this.S3.putObject({
+        Bucket: `${this.BUCKET_NAME}/cname`,
+        Key: `${message.ts}`,
+        Body: message.content,
+        ContentType: 'application/json'
+     },
+     (err: Error, _: any) => {
+       if(err) {
+         res.status(500).json({
+           error: err
+         });
+         return;
+       }
+     });
+
+     res.status(201).json({
+       id: `${message.ts}`
+     });
+   }
+
+   private async getImages(req: Request, res: Response): Promise<void> {
+     const cname = req.params.cname;
+
+     await this.S3.listObjects({
+       Bucket: `${this.BUCKET_NAME}`,
+       Delimiter: `/${cname}`
+     },
+     (err: Error, data: any) => {
+        if(err) {
+         res.status(500).json({
+           error: err
+         });
+         return;
+       }
+
+        res.status(200).json({
+         messages: data
+       });
+     });
+   }
+
+   private async getImage(req: Request, res: Response): Promise<void> {
+     const cname = req.params.cname;
+     const ts = req.params.ts;
+
+     await this.S3.getObject({
+       Bucket: `${this.BUCKET_NAME}/cname`,
+       Key: ts
+     },
+     (err: Error, data: any) => {
+        if(err) {
+         res.status(500).json({
+           error: err
+         });
+         return;
+       }
+
+       res.status(200).json({
+         image: data
+       });
+     })
    }
 
    private routes(): void {

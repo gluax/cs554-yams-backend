@@ -3,6 +3,7 @@ import { Document, model, Model, Schema } from 'mongoose';
 import User, { IUser, IUserModel } from './user.model';
 import Message, { IMessage } from './message.model';
 
+
 export interface IChat extends Document {
    chatname: string;
    img: string;
