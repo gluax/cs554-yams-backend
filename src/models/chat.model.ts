@@ -6,7 +6,7 @@ import Message, { IMessage } from './message.model';
 export interface IChat extends Document {
    chatname: string;
    img: string;
-   users: Array<string>;
+   users: Array<any>;
    messages: Array<IMessage>;
 }
 
@@ -38,11 +38,16 @@ const ChatSchema: Schema = new Schema({
       default: '',
       required: false
    },
-   users: {
-      type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-      default: [],
-      required: true
-   },
+   users: [
+      {
+         username: String,
+         user: {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+         },
+         _id: false
+      }
+   ],
    messages: {
       type: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
       default: [],
@@ -57,58 +62,6 @@ ChatSchema.static(
       callback: (err: Error, chat: IChat) => void
    ): Promise<void> => {
       await newChat.save(callback);
-   }
-);
-
-ChatSchema.static(
-   'addUser',
-   async (
-      chatId: string,
-      username: string,
-      callback: (err: Error, chat: IChat) => any
-   ): Promise<void> => {
-      const found: any = await User.getUserByUsername(
-         username,
-         async (err: Error, user: IUser) => {
-            if (err) throw err;
-            if (!user) {
-               return false;
-            }
-
-            await Chat.findOneAndUpdate(
-               { _id: chatId },
-               { $push: { users: user } },
-               { new: true },
-               callback
-            );
-         }
-      );
-   }
-);
-
-ChatSchema.static(
-   'removeUser',
-   async (
-      chatId: string,
-      username: string,
-      callback: (err: Error, chat: IChat) => any
-   ): Promise<void> => {
-      const found: any = await User.getUserByUsername(
-         username,
-         async (err: Error, user: IUser) => {
-            if (err) throw err;
-            if (!user) {
-               return false;
-            }
-
-            await Chat.findOneAndUpdate(
-               { _id: chatId },
-               { $pull: { users: { username: username } } },
-               { new: true },
-               callback
-            );
-         }
-      );
    }
 );
 

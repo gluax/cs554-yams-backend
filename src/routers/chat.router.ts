@@ -35,17 +35,17 @@ export default class ChatRouter {
          return;
       }
 
-      let users: Array<IUser> = [];
+      let users: Array<any> = [];
 
       for (let usern of usernames) {
          const found = await User.findOne({ username: usern });
          if (!found) {
             res.status(400).json({
-               error: [{ msg: `User ${usern} not found.` }]
+               error: [{ msg: `User '${usern}' not found.` }]
             });
             return;
          }
-         users.push(found);
+         users.push({ username: usern, user: found });
       }
 
       let newChat: IChat = new Chat({
@@ -83,27 +83,57 @@ export default class ChatRouter {
          return;
       }
 
-      await Chat.addUser(id, username, (err: Error, chat: IChat) => {
-         if (err) {
-            res.status(400).json({
-               error: err
-            });
-            return;
-         }
-
-         res.status(201).json({
-            msg: `User ${username} added!`
+      const validUser = await User.findOne({ username });
+      if (!validUser) {
+         res.status(400).json({
+            error: [{ msg: `User '${username}' not found.` }]
          });
+         return;
+      }
+
+      const chat = await Chat.findById(req.params.id, {
+         users: { $elemMatch: { username: username } }
       });
+
+      if (!chat) {
+         res.status(400).json({
+            error: [{ msg: `Chat '${id}' was not found.` }]
+         });
+         return;
+      }
+
+      if (chat.users.length) {
+         res.status(400).json({
+            error: `The user '${username}' is already in the chat.`
+         });
+         return;
+      }
+
+      const user = await User.findOne({ username });
+
+      Chat.findOneAndUpdate(
+         { _id: id },
+         { $push: { users: { username, user } } },
+         (err: Error, chat: IChat) => {
+            if (err) {
+               res.status(400).json({
+                  error: err
+               });
+               return;
+            }
+
+            res.status(201).json({
+               msg: `User '${username}' added!`
+            });
+         }
+      );
    }
 
    private async removeUser(req: Request, res: Response): Promise<void> {
       const id = req.params.id;
-      const username = req.body.user_name;
+      const username = req.body.username;
 
-      req
-         .checkBody('user_name', 'Must add at least one other user.')
-         .notEmpty();
+      req.checkBody('username', 'Must add at least one other user.').notEmpty();
       const errors: Record<string, any> = req.validationErrors();
 
       if (errors) {
@@ -113,23 +143,53 @@ export default class ChatRouter {
          return;
       }
 
-      await Chat.removeUser(id, username, (err: Error, chat: IChat) => {
-         if (err) {
-            res.status(400).json({
-               error: err
-            });
-            return;
-         }
-
-         res.status(201).json({
-            msg: `User ${username} added!`
+      const validUser = await User.findOne({ username });
+      if (!validUser) {
+         res.status(400).json({
+            error: [{ msg: `User '${username}' not found.` }]
          });
+         return;
+      }
+
+      const chat = await Chat.findById(req.params.id, {
+         users: { $elemMatch: { username: username } }
       });
+
+      if (!chat) {
+         res.status(400).json({
+            error: [{ msg: `Chat '${id}' was not found.` }]
+         });
+         return;
+      }
+
+      if (chat.users.length === 0) {
+         res.status(400).json({
+            error: `The user '${username}' is not in the chat.`
+         });
+         return;
+      }
+
+      Chat.findOneAndUpdate(
+         { _id: id },
+         { $pull: { users: { username } } },
+         (err: Error, chat: IChat) => {
+            if (err) {
+               res.status(400).json({
+                  error: err
+               });
+               return;
+            }
+
+            res.status(200).json({
+               msg: `User ${username} removed!`
+            });
+         }
+      );
    }
 
    private async chatInfo(req: Request, res: Response): Promise<void> {
       const id = req.params.id;
-      const chatInfo = await Chat.findById(id).populate('users');
+      const chatInfo = await Chat.findById(id).populate('users.user');
       if (!chatInfo) {
          res.status(404).json({
             error: `A chat with the id '${id}' could not be found.`
@@ -143,6 +203,6 @@ export default class ChatRouter {
       this.router.post('/new', this.createChat);
       this.router.post('/add/:id', this.addUser);
       this.router.post('/remove/:id', this.removeUser);
-      this.router.post('/:id/', this.chatInfo);
+      this.router.get('/:id/', this.chatInfo);
    }
 }
