@@ -3,9 +3,20 @@ import Chat, { IChat, IChatModel } from '../models/chat.model';
 import { NextFunction, Request, Response, Router } from 'express';
 import jwt from 'jsonwebtoken';
 import Message, { IMessage } from '../models/message.model';
+import multer from 'multer';
+import AWS from 'aws-sdk';
+import uuidv4 from 'uuid/v4';
+
+AWS.config.region = 'us-east-2';
+AWS.config.accessKeyId = process.env.AWS_KEY;
+AWS.config.secretAccessKey = process.env.AWS_SECRET;
+
+const upload = multer();
+const bucket = new AWS.S3();
 
 export default class ChatRouter {
    public router: Router;
+   private BUCKET_NAME: string;
 
    constructor() {
       this.router = Router();
@@ -271,11 +282,53 @@ export default class ChatRouter {
       );
    }
 
+   private async uploadPhoto(req: Request, res: Response): Promise<void> {
+      if (!req.file) {
+         res.status(400).json({
+            error: [{ msg: 'You must specify a file to upload.' }]
+         });
+         return;
+      }
+      if (!/^image\/(jpe?g|png|gif)$/i.test(req.file.mimetype)) {
+         res.status(400).json({
+            error: [{ msg: 'File must be an image.' }]
+         });
+         return;
+      }
+      const fileName = `${req.params.id}-${uuidv4()}.${req.file.mimetype.slice(
+         6
+      )}`;
+
+      await bucket.putObject(
+         {
+            ACL: 'public-read',
+            Body: req.file.buffer,
+            Key: fileName,
+            Bucket: process.env.AWS_BUCKET_NAME
+         },
+         (err, data) => {
+            if (err) {
+               res.status(500).json({
+                  error: [{ msg: err }]
+               });
+               return;
+            }
+            res.status(201).json({ fileName });
+         }
+      );
+   }
+
    private routes(): void {
       this.router.post('/new', this.createChat);
       this.router.post('/add/:id', this.authReq, this.addUser);
       this.router.post('/remove/:id', this.authReq, this.removeUser);
       this.router.post('/send/:id', this.authReq, this.sendMessage);
+      this.router.post(
+         '/photo/:id',
+         this.authReq,
+         upload.single('img'),
+         this.uploadPhoto
+      );
       this.router.get('/:id', this.authReq, this.chatInfo);
    }
 }
