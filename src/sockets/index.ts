@@ -1,6 +1,7 @@
 import socket from 'socket.io';
 import redisAdapter from 'socket.io-redis';
 import Chat, { IChat, IChatModel } from '../models/chat.model';
+import User, { IUser, IUserModel } from '../models/user.model';
 import Message, { IMessage } from '../models/message.model';
 import jwt from 'jsonwebtoken';
 
@@ -83,6 +84,32 @@ export default (server: any) => {
                   io.to(sk).emit('newchat', { chat: msg.chat });
                }
             }
+         }
+      });
+
+      socket.on('updatechat', async msg => {
+         console.log(
+            `[SOCKET] '${socket.username}' forced update of users in '${
+               msg.id
+            }'`
+         );
+         const chat = await Chat.findOne({ _id: msg.id });
+         for (let user of chat.users) {
+            for (let sk of clients[user.user] || []) {
+               io.to(sk).emit('forceupdate');
+            }
+         }
+      });
+
+      socket.on('updateuser', async msg => {
+         console.log(
+            `[SOCKET] '${socket.username}' forced update of user in '${
+               msg.username
+            }'`
+         );
+         const user = await User.findOne({ username: msg.username });
+         for (let sk of clients[user._id] || []) {
+            io.to(sk).emit('forceupdate');
          }
       });
 
