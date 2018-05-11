@@ -1,204 +1,265 @@
 import User, { IUser, IUserModel } from '../models/user.model';
+import Chat, { IChat, IChatModel } from '../models/chat.model';
 import { NextFunction, Request, Response, Router } from 'express';
-import uuidv4 from 'uuid/v4';
 import passport from 'passport';
-import passportLocal from 'passport-local';
+import jwt from 'jsonwebtoken';
+import passportJWT from 'passport-jwt';
 
-const LocalStrategy = passportLocal.Strategy;
+const ExtractJwt = passportJWT.ExtractJwt;
+const JwtStrategy = passportJWT.Strategy;
+
+const jwtOptions: passportJWT.StrategyOptions = {
+   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+   secretOrKey: process.env.JWT_SECRET
+};
 
 export default class UserRouter {
-  public router: Router;
+   public router: Router;
 
-  constructor() {
-    this.router = Router();
-    this.routes();
-  }
+   constructor() {
+      this.router = Router();
+      this.routes();
+   }
 
-  private async register(req: Request, res: Response): Promise<void> {
-    const fname: string = req.body.first_name;
-    const lname: string = req.body.last_name;
-    const email: string = req.body.email;
-    const username: string = req.body.username;
-    const password: string = req.body.password;
-    const passConfirm: string = req.body.passConfirm;
+   private async register(req: Request, res: Response): Promise<void> {
+      req.checkBody('firstName', 'First Name is required').notEmpty();
+      req.checkBody('lastName', 'Last Name is required').notEmpty();
+      req.checkBody('email', 'Email is required').notEmpty();
+      req.checkBody('email', 'Email is not valid').isEmail();
+      req.checkBody('username', 'Username is required').notEmpty();
+      req.checkBody('password', 'Password is required').notEmpty();
+      req
+         .checkBody('passConfirm', 'Passwords must match')
+         .equals(req.body.password);
 
-    req.checkBody('first_name', 'First name is required').notEmpty();
-    req.checkBody('last_name', 'Last name is required').notEmpty();
-    req.checkBody('email', 'Email is required').notEmpty();
-    req.checkBody('email', 'Email is not valid').isEmail();
-    req.checkBody('username', 'Username is required').notEmpty();
-    req.checkBody('password', 'Password is required').notEmpty();
-    req
-      .checkBody('passConfirm', 'Passwords must match')
-      .equals(req.body.password);
+      const errors: Record<string, any> = req.validationErrors();
 
-    const errors: Record<string, any> = req.validationErrors();
-
-    if(errors) {
-      res.status(400).json({
-        error: errors
-      });
-      return;
-    }
-
-    let newUser: IUser = new User({
-      firstName: fname,
-      lastName: lname,
-      email: email,
-      username: username,
-      password: password
-    });
-
-    const matchUsername = await User.findOne({ username: newUser.username });
-
-    if(matchUsername) {
-      res.status(409).json({
-        error: `Username ${newUser.username} is already taken.`
-      });
-      return;
-    }
-
-    const matchEmail = await User.findOne({ email: newUser.email });
-
-    if(matchEmail) {
-      res.status(409).json({
-        error: `A user with email ${newUser.email} is already registered.`
-      });
-      return;
-    }
-
-    await User.newUser(newUser, (err: Error, user: IUser) => {
-      if(err) {
-        res.status(424).json({
-          error: err
-        });
-        return;
+      if (errors) {
+         res.status(400).json({
+            error: errors
+         });
+         return;
       }
 
-      res.status(201).json({
-        user: newUser
+      const { firstName, lastName, email, username, password } = req.body;
+      let newUser: IUser = new User({
+         firstName,
+         lastName,
+         email,
+         username,
+         password
       });
-    });
 
-  }
+      const matchUsername = await User.findOne({ username: newUser.username });
 
-  private login(req: Request, res: Response): void {
-    const username: string = req.body.username;
-    res.status(200).json({
-      msg: 'login success'
-    });
-  };
-
-  private logout(req: Request, res: Response): void {
-    req.logout();
-    res.status(200).json({
-      msg: 'logout success'
-    });
-  };
-
-  private isAuthUser(req: Request, res: Response, next: NextFunction): void {
-    if(req.isAuthenticated()) {
-      return next();
-    } else {
-      res.status(403).json({
-        error: 'Not authenticated'
-      });
-    }
-  };
-
-  private async updateUser(req: Request, res: Response): Promise<void> {
-    let update: any = {}; //need to write interface for this :c
-    const id: string = req.user.id;
-
-    Object.keys(req.body).forEach(key => {
-      if(key !== '_id') {
-        update[key] = req.body[key];
-      }
-    });
-
-    await User.updateUser({ _id: id }, update, (err: Error, user: IUser) => {
-      if(err) {
-        res.status(500).json({
-          error: err
-        });
-        return;
+      if (matchUsername) {
+         res.status(409).json({
+            error: [{ msg: `Username ${newUser.username} is already taken.` }]
+         });
+         return;
       }
 
-      res.status(202).json({
-        user: user
-      });
-    });
-  };
+      const matchEmail = await User.findOne({ email: newUser.email });
 
-  private async aboutUser(req: Request, res: Response): Promise<void> {
-    const id: string = req.user.id;
-
-    await User.findOne({ _id: id }, (err, user) => {
-      if(err) {
-        res.status(500).json({
-          error: err
-        });
-        return;
+      if (matchEmail) {
+         res.status(409).json({
+            error: [
+               {
+                  msg: `A user with email ${
+                     newUser.email
+                  } is already registered.`
+               }
+            ]
+         });
+         return;
       }
 
+      await User.newUser(newUser, (err: Error, user: IUser) => {
+         if (err) {
+            res.status(424).json({
+               error: err
+            });
+            return;
+         }
+
+         res.status(201).json({
+            user: newUser
+         });
+      });
+   }
+
+   private login(req: Request, res: Response): void {
+      req.checkBody('username', 'Username is required').notEmpty();
+      req.checkBody('password', 'Password is required').notEmpty();
+
+      const errors: Record<string, any> = req.validationErrors();
+      if (errors) {
+         res.status(400).json({
+            error: errors
+         });
+         return;
+      }
+
+      const { username, password } = req.body;
+      User.getUserByUsername(username, (err: Error, user: IUser) => {
+         if (err || !user) {
+            res
+               .status(404)
+               .json({ error: [{ msg: `User '${username}' is not found.` }] });
+            return;
+         }
+         User.comparePassword(
+            password,
+            user.password,
+            (err: Error, match: boolean) => {
+               if (err || !match) {
+                  res.status(403).json({
+                     error: [{ msg: `Incorrect username or password.` }]
+                  });
+                  return;
+               }
+               const payload = {
+                  id: user._id,
+                  username
+               };
+               const token = jwt.sign(payload, jwtOptions.secretOrKey);
+               res.status(200).json({
+                  msg: 'login success',
+                  token
+               });
+            }
+         );
+      });
+   }
+
+   private logout(req: Request, res: Response): void {
+      req.logout();
       res.status(200).json({
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        username: user.username
+         msg: 'logout success'
       });
-    });
-  };
+   }
 
-  private routes(): void {
-    this.router.post('/register', this.register);
-    this.router.post('/login', passport.authenticate('local', { failWithError: true }),
-      (req: Request, res: Response, next: NextFunction) => {
-      // handle success
-      this.login(req, res);
-    },
-    (err: Error, req: Request, res: Response, next: NextFunction) => {
-      // handle error
-      if (err) {
-        res.status(409).json({
-          error: 'Invalid Username or Password'
-        });
+   private async updateUser(req: Request, res: Response): Promise<void> {
+      let update: any = {}; //need to write interface for this :c
+      const id: string = req.user.id;
+
+      Object.keys(req.body).forEach(key => {
+         if (key !== '_id') {
+            update[key] = req.body[key];
+         }
+      });
+
+      await User.updateUser({ _id: id }, update, (err: Error, user: IUser) => {
+         if (err) {
+            res.status(500).json({
+               error: err
+            });
+            return;
+         }
+
+         res.status(202).json({
+            user: user
+         });
+      });
+   }
+
+   private async aboutUser(req: Request, res: Response): Promise<void> {
+      const id: string = req.user.id;
+      await User.findOne({ _id: id }, (err, user) => {
+         if (err) {
+            res.status(500).json({
+               error: [{ msg: err }]
+            });
+            return;
+         }
+
+         res.status(200).json({
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            username: user.username
+         });
+      });
+   }
+
+   private async belongsChats(req: Request, res: Response): Promise<void> {
+      const { username } = req.user;
+      try {
+         const formatted: any = {};
+         const data = await Chat.find({
+            users: { $elemMatch: { username } }
+         });
+         data.forEach(e => (formatted[e._id] = e));
+         res.json(formatted);
+      } catch (err) {
+         res.status(500).json({
+            error: [{ msg: err }]
+         });
       }
-    });
-    this.router.post('/update', this.isAuthUser, this.updateUser);
-    this.router.get('/about', this.isAuthUser, this.aboutUser);
-    this.router.get('/logout', this.isAuthUser, this.logout);
-  }
+   }
 
+   private async userSearch(req: Request, res: Response): Promise<void> {
+      const { query } = req.params;
+      try {
+         const users = (await User.find({ username: new RegExp(query) })).map(
+            e => e.username
+         );
+         res.json(users);
+      } catch (err) {
+         console.log(err);
+         res.status(500).json({
+            error: [{ msg: err }]
+         });
+      }
+   }
+
+   private routes(): void {
+      this.router.post('/register', this.register);
+      this.router.post('/login', this.login);
+      this.router.post(
+         '/update',
+         passport.authenticate('jwt', { session: false }),
+         this.updateUser
+      );
+      this.router.get(
+         '/about',
+         passport.authenticate('jwt', { session: false }),
+         this.aboutUser
+      );
+      this.router.get(
+         '/logout',
+         passport.authenticate('jwt', { session: false }),
+         this.logout
+      );
+      this.router.get(
+         '/chats',
+         passport.authenticate('jwt', { session: false }),
+         this.belongsChats
+      );
+      this.router.get('/search/:query', this.userSearch);
+   }
 }
 
 passport.use(
-  new LocalStrategy((username: string, password: string, done: any) => {
-    User.getUserByUsername(username, (err: Error, user: IUser) => {
-      if (err) throw err;
-      if (!user) {
-        return done(null, false, { error: 'Unknown User' });
-      }
-
-      User.comparePassword(password, user.password, (err: Error, match: boolean) => {
-        if (err) throw err;
-        if (match) {
-          return done(null, user);
-        } else {
-          return done(null, false, { error: 'Invalid password' });
-        }
+   new JwtStrategy(jwtOptions, (payload, done) => {
+      User.getUserById(payload.id, (err: Error, user: IUser) => {
+         if (err) throw err;
+         if (!user) {
+            return done(null, false, { error: [{ msg: 'Unknown User' }] });
+         } else {
+            return done(null, user);
+         }
       });
-    });
-  })
+   })
 );
 
 passport.serializeUser(async (user: IUser, done: any) => {
-  done(null, user.id);
+   done(null, user.id);
 });
 
 passport.deserializeUser(async (id: string, done: any) => {
-  User.getUserById(id, async (err: Error, user: IUser) => {
-    done(err, user);
-  });
+   User.getUserById(id, async (err: Error, user: IUser) => {
+      done(err, user);
+   });
 });
